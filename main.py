@@ -11,4 +11,6 @@ def calculate(total, trucks):
 @app.route('/')
 def get_ratio():
     data = request.get_json()
+    if data['total'] < min(data['trucks']):
+        return "Cargo too small"
     return calculate(data['total'], data['trucks'])
