@@ -4,36 +4,47 @@ app = Flask(__name__)
 
 
 def calculate(tonnes, ratios, index):
+        # check if it perfectly fits in 1 truck type
+    i = index
+    for item in ratios[index:]:
+        if tonnes % item[0] == 0:
+            ratios[i][1] = ratios[i][1] + tonnes // ratios[i][0]
+            return ratios
+        i += 1
+
+    # fill largest truck
     ratios[index][1] = ratios[index][1] + tonnes // ratios[index][0]
+
+    # take remainder after filling largest truck
     remainder = tonnes % ratios[index][0]
-    if remainder == 0:
-        return ratios
-    else:
-        for item in ratios[:index][::-1]:
-            if remainder % item[0] == 0:
-                item[1] = remainder // item[0]
-                return ratios
-        for item in ratios[:index][::-1]:
-            if remainder // item[0] > 0:
-                item[1] = remainder // item[0]
-                remainder = remainder % item[0]
-                for item2 in ratios[:index-1][::-1]:
-                    if remainder % item2[0] == 0:
-                        item2[1] = remainder // item2[0]
-                        return ratios
-                if len(ratios[:index-1]) == 0:
-                    response = "Perfect distribution not possible\n"
-                    response = response + "Ratios: {}, Uncarried balance: {}".format(ratios, remainder)
-                    return response
-                if ratios[index][1] < 2:
-                    remainder = remainder + ratios[index+1][0]
-                    ratios[index+1][1] -= 1
-                else:
-                    remainder = remainder + ratios[index][0]
-                    ratios[index][1] -= 1
-                    index -= 1
-                calculate(remainder, ratios, index)
-                return ratios
+    for item in ratios[index+1:]:
+        if remainder % item[0] == 0:
+            item[1] = remainder // item[0]
+            return ratios
+    i = 1
+    for item in ratios[index+i:]:
+        if remainder // item[0] > 0:
+            item[1] = remainder // item[0]
+            remainder2 = remainder % item[0]
+            if item == ratios[-1]:
+                response = "Complete distribution not possible\n"
+                response = response + "Ratios: {}\nUncarried balance: {}".format(ratios, remainder2)
+                return response
+            for item2 in ratios[index+i:]:
+                if remainder2 % item2[0] == 0:
+                    item2[1] = remainder2 // item2[0]
+                    return ratios
+            if ratios[index+i][1] < 2:
+                remainder = remainder + ratios[index+1][0]
+                ratios[index+1][1] -= 1
+            else:
+                remainder = remainder + ratios[index][0]
+                ratios[index][1] -= 1
+                index -= 1
+            calculate(remainder, ratios, index)
+            return ratios
+        else:
+            i += 1
 
 @app.route('/')
 def get_ratio():
@@ -41,5 +52,12 @@ def get_ratio():
     if data['total'] < min(data['trucks']):
         return "Cargo too small"
     data['trucks'].sort()
-    ratios = [[x, 0] for x in data['trucks']]
-    return "{}".format(calculate(data['total'], ratios, -1))
+    trucks = data['trucks'][::-1]
+    index = 0
+    if trucks[0] > data['total']:
+        for truck in trucks[1:]:
+            index += 1
+            if truck < data['total']:
+                break
+    ratios = [[x, 0] for x in trucks]
+    return "{}".format(calculate(data['total'], ratios, index))
