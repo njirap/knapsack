@@ -40,4 +40,6 @@ def get_ratio():
     data = request.get_json()
     if data['total'] < min(data['trucks']):
         return "Cargo too small"
-    return calculate(data['total'], data['trucks'])
+    data['trucks'].sort()
+    ratios = [[x, 0] for x in data['trucks']]
+    return "{}".format(calculate(data['total'], ratios, -1))
