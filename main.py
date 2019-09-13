@@ -49,8 +49,18 @@ def calculate(tonnes, ratios, index):
 @app.route('/')
 def get_ratio():
     data = request.get_json()
+
+    # Edge cases
+    if data is None:
+        return "Pass the parameters in the form\n{'total':90, 'trucks': [56, 23, 45]}"
+
+    if (not 'total' in data) or (not 'trucks' in data):
+        return "Pass both required parameters in the form\n{'total':90, 'trucks': [56, 23, 45]}"
+
     if data['total'] < min(data['trucks']):
         return "Cargo too small"
+    # End of edge cases
+
     data['trucks'].sort()
     trucks = data['trucks'][::-1]
     index = 0
